@@ -1,0 +1,26 @@
+steps:
+  - name: 'bash'
+    args: ['echo', 'I am running in a private pool!']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |
+      set -eux
+      echo "$${PRIVATE_KEY}" | base64 -d > /ssh.key
+      chmod 600 /ssh.key
+      ssh -i /ssh.key -o StrictHostKeyChecking=no -o BatchMode=yes $_SSH_USER@$_VM_IP "/home/cloud-build/script.sh"
+    secretEnv: ['PRIVATE_KEY']
+
+timeout: 3600s
+options:
+  logging: CLOUD_LOGGING_ONLY
+  dynamicSubstitutions: true
+  pool: 
+    name: projects/$PROJECT_ID/locations/us-central1/workerPools/cloud-build-worker-private-pool  
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/$PROJECT_ID/secrets/cloudbuildkey3/versions/latest
+    env: 'PRIVATE_KEY'
